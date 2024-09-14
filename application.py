@@ -93,7 +93,7 @@ def add_workout():
 
 # Route to retrieve workouts with optional filtering
 @app.route('/workouts', methods=['GET'])
-def get_filtered_workouts():
+def get_workouts():
     workoutsQuery = Workout.query  # Initialize the query
     routeName = request.args.get('route_name')  # Get filter parameters from request
     startDate = request.args.get('start_date')
@@ -115,6 +115,54 @@ def get_filtered_workouts():
 
     workouts = workoutsQuery.all()
     return jsonify([workout.to_Json() for workout in workouts])  # Return the results as JSON
+
+# Route to delete workout of <id>
+@app.route('/workouts/<id>', methods=['DELETE'])
+def delete_workout(id):
+    workout = Workout.query.get(id)
+
+    # Check if exists
+    if not workout:
+        return jsonify({'error': 'Workout not found'}), 404
+
+    db.session.delete(workout)
+    db.session.commit()
+    return jsonify({'message': 'Workout deleted'})
+
+# Route to update workout of <id>
+@app.route('/workouts/<id>', methods=['PUT'])
+def update_workout(id):
+    workout = Workout.query.get(id)
+
+    # Extract data from the request JSON
+    routeName = request.json.get('routeName')
+    description = request.json.get('description')
+    distance = request.json.get('distance')
+    duration = request.json.get('duration')
+    heartRate = request.json.get('heartRate')
+    weather = request.json.get('weather')
+    image = request.json.get('image')
+
+    # Update only if the value is provided in the request
+    if routeName:
+        print(f"Updating routeName from {workout.routeName} to {routeName}")
+        workout.routeName = routeName
+    if description:
+        workout.description = description
+    if distance:
+        workout.distance = distance
+    if duration:
+        workout.duration = duration
+    if heartRate:
+        workout.heartRate = heartRate
+    if weather:
+        workout.weather = weather
+    if image:
+        workout.image = image.encode('utf-8') if isinstance(image, str) else image
+
+    db.session.commit()
+
+    return jsonify({'message': 'Workout updated'})
 
 # Route to get aggregated workout data
 @app.route('/workouts/aggregate', methods=['GET'])
