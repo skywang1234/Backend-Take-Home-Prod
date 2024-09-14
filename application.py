@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import select, func
 from datetime import datetime
+import requests
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///workouts.db'
@@ -17,11 +18,12 @@ class Workout(db.Model):
     distance = db.Column(db.Float)
     duration = db.Column(db.Float)
     heartRate = db.Column(db.Integer)
+    weather = db.Column(db.String(150))
 
     def __repr__(self):
         return f"{self.routeName} - {self.description}"
     
-    def toJson(self):
+    def to_Json(self):
         return {
             "id": self.id,
             "routeName": self.routeName,
@@ -30,18 +32,47 @@ class Workout(db.Model):
             "distance": self.distance,
             "duration": self.duration,
             "heartRate": self.heartRate,
+            "weather": self.weather,
         }
 
 @app.route('/')
 def index():
     return 'Welcome to the Workouts Tracker API'
 
+def get_weather(api_key, city):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        weather_description = data['weather'][0]['description']
+        temperature = data['main']['temp']
+        return f"{weather_description}, {temperature}°C"
+    except requests.RequestException as e:
+        print("Failed to fetch weather data")
+
 @app.route('/workouts', methods=['POST'])   
 def add_workout():
-    workout = Workout(routeName=request.json['routeName'], description=request.json['description'])
+    routeName = request.json.get('routeName')
+    description = request.json.get('description')
+    distance = request.json.get('distance')
+    duration = request.json.get('duration')
+    heartRate = request.json.get('heartRate')
+
+    api_key = "2b45f5be9acc8615953d62cb45ff8114"
+    city = "Cary"
+    weather = get_weather(api_key, city)
+    
+    if not routeName or not description:
+        return jsonify({'error': 'Name or Description must be provided'}), 400
+        
+    workout = Workout(routeName=routeName, description=description,
+        distance=distance, duration=duration, heartRate=heartRate, weather=weather)
+
     db.session.add(workout)
     db.session.commit()
-    return "200"
+    return jsonify({'message': 'Workout added successfully'}), 200
 
 @app.route('/workouts', methods=['GET'])
 def get_filtered_workouts():
@@ -64,7 +95,13 @@ def get_filtered_workouts():
         workoutsQuery = workoutsQuery.filter(Workout.distance <= float(maxDist))
 
     workouts = workoutsQuery.all()
-    return jsonify([workout.toJson() for workout in workouts])
+    return jsonify([workout.to_Json() for workout in workouts])
+
+@app.route('/reset')
+def reset():
+    db.drop_all()
+    db.create_all()
+    return jsonify({'message': 'Database successfully reset'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True) #remove debug=True
