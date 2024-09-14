@@ -18,7 +18,9 @@ class Workout(db.Model):
     distance = db.Column(db.Float)
     duration = db.Column(db.Float)
     heartRate = db.Column(db.Integer)
+
     weather = db.Column(db.String(150))
+    image = db.Column(db.LargeBinary)
 
     def __repr__(self):
         return f"{self.routeName} - {self.description}"
@@ -33,6 +35,7 @@ class Workout(db.Model):
             "duration": self.duration,
             "heartRate": self.heartRate,
             "weather": self.weather,
+            "image": self.image.decode('utf-8') if self.image else None,
         }
 
 @app.route('/')
@@ -60,15 +63,19 @@ def add_workout():
     duration = request.json.get('duration')
     heartRate = request.json.get('heartRate')
 
+    if not routeName or not description:
+        return jsonify({'error': 'Name or Description must be provided'}), 400
+
     api_key = "2b45f5be9acc8615953d62cb45ff8114"
     city = "Cary"
     weather = get_weather(api_key, city)
-    
-    if not routeName or not description:
-        return jsonify({'error': 'Name or Description must be provided'}), 400
+
+    image = request.json.get('image')
+    imageBinary = image.encode('utf-8') if image else None
+
         
     workout = Workout(routeName=routeName, description=description,
-        distance=distance, duration=duration, heartRate=heartRate, weather=weather)
+        distance=distance, duration=duration, heartRate=heartRate, weather=weather, image=imageBinary)
 
     db.session.add(workout)
     db.session.commit()
@@ -116,14 +123,14 @@ def get_aggregate_data():
 
     results = workoutsQuery.one()
 
-    aggregate_data = {
+    aggregateData = {
         'totalDist': results.totalDist if results.totalDist else 0,
         'avgHeartRate': results.avgHeartRate if results.avgHeartRate else 0,
         'avgDuration': results.avgDuration if results.avgDuration else 0,
         'totalWorkouts': results.totalWorkouts if results.totalWorkouts else 0,
     }
 
-    return jsonify(aggregate_data), 200
+    return jsonify(aggregateData), 200
 
 @app.route('/reset')
 def reset():
