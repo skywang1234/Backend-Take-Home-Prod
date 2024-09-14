@@ -140,7 +140,6 @@ def update_workout(id):
     distance = request.json.get('distance')
     duration = request.json.get('duration')
     heartRate = request.json.get('heartRate')
-    weather = request.json.get('weather')
     image = request.json.get('image')
 
     # Update only if the value is provided in the request
@@ -155,8 +154,6 @@ def update_workout(id):
         workout.duration = duration
     if heartRate:
         workout.heartRate = heartRate
-    if weather:
-        workout.weather = weather
     if image:
         workout.image = image.encode('utf-8') if isinstance(image, str) else image
 

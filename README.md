@@ -3,11 +3,15 @@
 
 This API allows users to manage workout records, including the ability to add, retrieve, update, and delete workouts. It also provides aggregated data and the ability to reset the database.
 
-## Design Decisions
-- **Database:** SQLite is used as the database engine due to its simplicity and suitability for small to medium-sized applications.
-- **Web Framework:** Flask is chosen for its lightweight and easy-to-use nature, which is ideal for building RESTful APIs.
-- **Weather Integration:** OpenWeatherMap API is used to fetch current weather conditions, providing relevant context for workouts.
-- **Image Storage:** Workout images are stored as binary data in the database, encoded in Base64 format, allowing easy integration with client applications.
+## Major Design Decisions
+- **Choice of Language:** Originally, I planned to use Python's TensorFlow library to implement computer vision to "read" workout images, but due to time constraints, I decided to scrap the idea. I have working proficiency with Node and Java.
+- **Use of Generative AI:** I utilized ChatGPT to write comments, handle errors, and write the documentation for my API. This was mainly due to time constraints in combination with my other responsibilities. The code itself is not AI-generated.
+- **Use of Query:** According to SQLAlchemy's documentation, the use of the query interface is legacy and has been replaced with 'session.execute(select())'. I chose to stick with the query interface simply because it was easier. However, I believe it also demonstrates my ability to work with legacy codebases 😉.
+- **Image Handling:** I chose Base64 encoding for image handling because it retains the image data, allowing the image to be accessible on multiple devices as opposed to saving the image and its path locally. Obviously, this severely limits the size of the images that can be saved; however, it is a heuristic solution.
+
+## Minor Design Decisions
+- **Read-only Values:** Some values, like date and weather, cannot be updated or set and are automatically filled with current date/time and weather values. This is because I wanted this API to be a workout tracker, and removing some flexibility prevents beginners from "cheesing" their workouts 😆.
+- **Lack of Fuzzy String Matching:** I considered utilizing fuzzy string matching when searching for the Route Name; however, I decided against it due to time constraints and the fact that, in my experience, most people name their runs with similar names every time.
 
 ## Choice of Tools
 - **Flask:** A Python micro-framework ideal for small to medium-sized web applications and APIs.
