@@ -97,6 +97,34 @@ def get_filtered_workouts():
     workouts = workoutsQuery.all()
     return jsonify([workout.to_Json() for workout in workouts])
 
+@app.route('/workouts/aggregate', methods=['GET'])
+def get_aggregate_data():
+    startDate = request.args.get('start_date')
+    endDate = request.args.get('end_date')
+
+    workoutsQuery = db.session.query(
+        func.sum(Workout.distance).label('totalDist'),
+        func.avg(Workout.heartRate).label('avgHeartRate'),
+        func.avg(Workout.duration).label('avgDuration'),
+        func.count(Workout.id).label('totalWorkouts')
+    )
+
+    if startDate:
+        workoutsQuery = workoutsQuery.filter(Workout.date >= datetime.strptime(startDate, '%Y-%m-%d').date())
+    if endDate:
+        workoutsQuery = workoutsQuery.filter(Workout.date <= datetime.strptime(endDate, '%Y-%m-%d').date())
+
+    results = workoutsQuery.one()
+
+    aggregate_data = {
+        'totalDist': results.totalDist if results.totalDist else 0,
+        'avgHeartRate': results.avgHeartRate if results.avgHeartRate else 0,
+        'avgDuration': results.avgDuration if results.avgDuration else 0,
+        'totalWorkouts': results.totalWorkouts if results.totalWorkouts else 0,
+    }
+
+    return jsonify(aggregate_data), 200
+
 @app.route('/reset')
 def reset():
     db.drop_all()
